@@ -1,0 +1,3 @@
+phpserialize
+mediawiki-utilities
+jsonable
