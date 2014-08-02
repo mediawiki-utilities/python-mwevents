@@ -1,4 +1,5 @@
-from .event import Event, Match
+from .event import Event
+from .match import Match
 
 
 class PageProtectionModified(Event):

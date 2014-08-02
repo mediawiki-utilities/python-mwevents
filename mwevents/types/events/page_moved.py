@@ -1,6 +1,7 @@
 import phpserialize
 
-from .event import Event, Match
+from .event import Event
+from .match import Match
 
 
 class PageMoved(Event):

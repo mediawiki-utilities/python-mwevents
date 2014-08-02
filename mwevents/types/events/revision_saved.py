@@ -52,7 +52,26 @@ class RevisionSaved(Event):
         )
     
     @classmethod
-    def from_db(cls, db_row):
+    def from_rev_row(cls, rev_row):
+        return cls(
+            Timestamp(db_row['rev_timestamp'])
+            User(
+                row(db_row['rev_user']),
+                row['rev_user_text']
+            ),
+            rev['rev_comment'],
+            Revision(
+                db_row['rev_id'],
+                db_row['rev_parent_id'],
+                db_row['rev_len'],
+                db_row['rev_sha1'],
+                db_row['rev_page'],
+                db_row['rev_minor']
+            )
+        )
+    
+    @classmethod
+    def from_rc_row(cls, rc_row):
         """
         :Example DB row::
             rc_id: 624362534
@@ -83,21 +102,20 @@ class RevisionSaved(Event):
             rc_log_action: ""
             rc_params:
         """
-        
-        cls(
-            Timestamp(db_row['rev_timestamp'])
+        return cls(
+            Timestamp(db_row['rc_timestamp'])
             User(
-                row(db_row['rev_user']),
-                row['rev_user_text']
+                row(db_row['rc_user']),
+                row['rc_user_text']
             ),
-            rev['rev_comment'],
+            rev['rc_comment'],
             Revision(
-                db_row['rev_id'],
-                db_row['rev_parent_id'],
-                db_row['rev_len'],
-                db_row['rev_sha1'],
-                db_row['rev_page'],
-                db_row['rev_minor']
+                db_row['rc_this_oldid'],
+                db_row['rc_last_oldid'],
+                db_row['rc_new_len'],
+                None, # Not available
+                db_row['rc_cur_id'],
+                db_row['rc_minor']
             )
         )
     
