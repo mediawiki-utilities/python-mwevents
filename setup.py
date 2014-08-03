@@ -24,7 +24,7 @@ setup(
     license=open('LICENSE').read(),
     description='Standardized public MediaWiki events for tools and Science.',
     long_description=read('README.rst'),
-    requirements=requirements('requirments.txt'),
+    install_requires=requirements('requirements.txt'),
     test_suite='nose.collector',
     classifiers=[
         "Development Status :: 4 - Beta",
