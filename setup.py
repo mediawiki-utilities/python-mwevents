@@ -34,7 +34,7 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Topic :: Software Development :: Libraries :: Python Modules"
+        "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Text Processing :: General",
         "Topic :: Utilities",
         "Topic :: Scientific/Engineering"
