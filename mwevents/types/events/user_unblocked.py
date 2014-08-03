@@ -1,16 +1,20 @@
-from .event import Event, Match
+from .. import Timestamp, Unavailable, User
+from ... import configuration
+from ...util import split_page_name
+from .event import Event
+from .match import Match
 
 
 class UserUnblocked(Event):
-    MATCHES = [MATCH("block", "unblock", False, "log")]
+    MATCHES = [Match("block", "unblock", False, "log")]
     __slots__ = ('unblocked',)
-    def __init__(self, timestamp, user, comment, unblocked):
-        super().__init__(timestamp, user, comment)
+    def initialize(self, timestamp, user, comment, unblocked):
+        super().initialize(timestamp, user, comment)
         self.unblocked = User(unblocked)
         
     
     @classmethod
-    def from_api_doc(cls, api_doc, config):
+    def from_rc_doc(cls, rc_doc, config=configuration.DEFAULT):
         """
         Example:
             {
@@ -33,18 +37,17 @@ class UserUnblocked(Event):
                 "tags": []
             }
         """
-        ns, unblocked_name = config.title_parser.parse(api_doc['title'])
-        assert ns == 2
+        nsname, unblocked_name = split_page_name(rc_doc['ns'], rc_doc['title'])
         
         return cls(
-            Timestamp(api_doc['timestamp'])
+            Timestamp(rc_doc['timestamp']),
             User(
-                api_doc['userid'],
-                api_doc['user']
+                rc_doc.get('userid'),
+                rc_doc.get('user')
             ),
-            api_doc['comment'],
+            rc_doc.get('comment'),
             User(
-                None, # Not available
+                Unavailable, # Not available
                 unblocked_name
             )
         )

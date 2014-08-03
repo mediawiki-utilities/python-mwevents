@@ -1,15 +1,20 @@
-from .event import Event, Match
+from .. import Page, Timestamp, User
+from ... import configuration
+from ...util import split_page_name
+from .event import Event
+from .match import Match
 
 
 class PageCreated(Event):
-    MATCHES = [Match(None, None, True, "new", priority=25)]
+    MATCHES = [Match(None, None, True, "new")]
+    PRIORITY = 50 # Must happen before RevisionSaved
     __slots__ = ('page',)
-    def __init__(self, timestamp, user, comment, page):
-        super().__init__(timestamp, user, comment)
+    def initialize(self, timestamp, user, comment, page):
+        super().initialize(timestamp, user, comment)
         self.page = Page(page)
     
     @classmethod
-    def from_api_doc(cls, api_doc, config=configuration.DEFAULTS):
+    def from_rc_doc(cls, rc_doc, config=configuration.DEFAULT):
         """
         Example:
             {
@@ -31,22 +36,20 @@ class PageCreated(Event):
             }
         """
         
-        ns, title = config.title_parser.parse(api_doc['title'])
-        assert ns == api_doc['ns']
+        nsname, title = split_page_name(rc_doc['ns'], rc_doc['title'])
         
-        cls(
-            Timestamp(api_doc['timestamp']),
+        return cls(
+            Timestamp(rc_doc['timestamp']),
             User(
-                int(api_doc['userid']),
-                api_doc['user']
+                rc_doc.get('userid'),
+                rc_doc.get('user')
             ),
-            api_doc['comment'],
+            rc_doc.get('comment'),
             Page(
-                api_doc['page_id'],
-                ns,
+                rc_doc.get('pageid'),
+                rc_doc['ns'],
                 title
             )
         )
 
-# Event.register(PageCreated)
-# TODO: Uncomment when ready
+Event.register(PageCreated)

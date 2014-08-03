@@ -2,7 +2,7 @@ import re
 
 from jsonable import instance, JSONable
 
-from .. import defaults
+from .. import configuration
 from .timestamp import Timestamp
 
 
@@ -21,8 +21,8 @@ class Protection(JSONable):
     
     @classmethod
     def from_params(cls, params,
-                         indefinite=defaults.PARAMS_INDEFINITE,
-                         time_format=defaults.PARAMS_TIME_FORMAT):
+            indefinite=configuration.DEFAULT['indefinite'],
+            expiration_format=configuration.DEFAULT['expiration_format']):
     
         for match in cls.LOG_PARAMS_RE.finditer(params):
             action, group, expiration, _ = match.groups()
@@ -30,6 +30,6 @@ class Protection(JSONable):
             if expiration == indefinite:
                 expiration = None
             else:
-                expiration = Timestamp.strptime(expiration, time_format)
+                expiration = Timestamp.strptime(expiration, expiration_format)
             
             yield cls(action, group, expiration)

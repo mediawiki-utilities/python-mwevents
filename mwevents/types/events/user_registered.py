@@ -1,4 +1,8 @@
-from .event import Event, Match
+from .. import Timestamp, Unavailable, User
+from ... import configuration
+from ...util import split_page_name
+from .event import Event
+from .match import Match
 
 
 class UserRegistered(Event):
@@ -7,14 +11,14 @@ class UserRegistered(Event):
                Match("newusers", "create2", False, "log"),
                Match("newusers", "autocreate", False, "log"),
                Match("newusers", "byemail", False, "log")]
-    __slots__ = ('action', 'newuser')
-    def __init__(self, timestamp, user, comment, action, new):
-        super().__init__(timestamp, user, comment)
+    __slots__ = ('action', 'new')
+    def initialize(self, timestamp, user, comment, action, new):
+        super().initialize(timestamp, user, comment)
         self.action = str(action)
         self.new = User(new)
         
     @classmethod
-    def from_api_doc(cls, api_doc, config=configuration.DEFAULT):
+    def from_rc_doc(cls, rc_doc, config=configuration.DEFAULT):
         """
         Example:
             {
@@ -75,30 +79,28 @@ class UserRegistered(Event):
                 "tags": []
             }
         """
-        if api_doc['logaction'] == "create":
-            user_name = api_doc['user']
-            user_id
+        if rc_doc['logaction'] == "create":
+            registered_name = rc_doc['user']
+            registered_id = rc_doc['userid']
         else: #doc['logaction'] in ("create2","byemail")
-            ns, name_title = config.title_parser.parse(doc['title'])
-            assert ns == 2
-            user_name = name_title
-            user_id = None # Not available
+            nsname, registered_name = split_page_name(rc_doc['ns'],
+                                                      rc_doc['title'])
+            registered_id = Unavailable # Not available
         
         return cls(
-            Timestamp(api_doc['timestamp'])
+            Timestamp(rc_doc['timestamp']),
             User(
-                api_doc['userid'],
-                api_doc['name']
+                rc_doc.get('userid'),
+                rc_doc.get('user')
             ),
-            api_doc['comment'],
-            api_doc['logaction'],
+            rc_doc.get('comment'),
+            rc_doc['logaction'],
             User(
-                user_id,
-                user_name
+                registered_id,
+                registered_name
             )
         )
         
     
 
-# Event.register(UserRegistered)
-# TODO: Uncomment when ready
+Event.register(UserRegistered)

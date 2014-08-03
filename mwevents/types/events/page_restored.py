@@ -1,3 +1,7 @@
+
+from .. import Page, Timestamp, Unavailable, User
+from ... import configuration
+from ...util import split_page_name
 from .event import Event
 from .match import Match
 
@@ -5,15 +9,15 @@ from .match import Match
 class PageRestored(Event):
     MATCHES = [Match("delete", "restore", False, "log")]
     __slots__ = ('old_page_id', 'page')
-    def __init__(self, timestamp, user, comment, old_page_id, page):
-        super().__init__(timestamp, user, comment)
-        self.old_page_id = int(old_page_id) if old_page_id is not None else None
+    def initialize(self, timestamp, user, comment, old_page_id, page):
+        super().initialize(timestamp, user, comment)
+        self.old_page_id = Unavailable.otherwise(old_page_id, int)
         self.page = Page(page)
     
     @classmethod
-    def from_api_doc(cls, api_doc):
+    def from_rc_doc(cls, rc_doc, config=configuration.DEFAULT):
         """
-        :Example API doc::
+        Example:
             {
                 "type": "log",
                 "ns": 3,
@@ -34,25 +38,23 @@ class PageRestored(Event):
                 "tags": []
             }
         """
-        ns, title = Page.parse_title(api_doc['title'])
-        assert ns == api_doc['ns']
+        nsname, title = split_page_name(rc_doc['ns'], rc_doc['title'])
         
         return cls(
-            Timestamp(api_doc['timestamp'])
+            Timestamp(rc_doc['timestamp']),
             User(
-                int(doc['userid']),
-                doc['user']
+                rc_doc.get('userid'),
+                rc_doc.get('user')
             ),
-            api_doc['comment'],
-            None, # Not available
+            rc_doc.get('comment'),
+            Unavailable, # Not available
             Page(
-                doc['pageid'],
-                ns,
+                rc_doc.get('pageid'),
+                rc_doc.get('ns'),
                 title
             )
         )
     
     
 
-# Event.register(RevisionSaved)
-# TODO: Uncomment when ready
+Event.register(PageRestored)

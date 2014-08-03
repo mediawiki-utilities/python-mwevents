@@ -1,8 +1,10 @@
 from jsonable import JSONable
 
+from .unavailable import Unavailable
+
 
 class User(JSONable):
     __slots__ = ('id', 'text')
     def initialize(self, id, text):
-        self.id = int(id) if id is not None else None
+        self.id = self.id = Unavailable.otherwise(id, int)
         self.text = str(text)

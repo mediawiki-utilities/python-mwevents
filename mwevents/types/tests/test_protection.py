@@ -2,6 +2,7 @@ from nose.tools import eq_
 
 from ..protection import Protection
 from ..timestamp import Timestamp
+from ..unavailable import Unavailable
 
 
 def test_construction_and_values():
@@ -32,3 +33,17 @@ def test_from_params():
         ],
         list(Protection.from_params(log_params))
     )
+
+
+def test_unavailable_values():
+    action = "edit"
+    group = Unavailable
+    expiration = None
+
+    protection = Protection(action, group, expiration)
+
+    eq_(protection.action, action)
+    eq_(protection.group, group)
+    eq_(protection.expiration, expiration)
+
+    eq_(protection, Protection(protection.to_json()))

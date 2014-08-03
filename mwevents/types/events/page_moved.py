@@ -1,5 +1,8 @@
 import phpserialize
 
+from .. import Page, Timestamp, Unavailable, User
+from ... import configuration
+from ...util import split_page_name
 from .event import Event
 from .match import Match
 
@@ -8,14 +11,17 @@ class PageMoved(Event):
     MATCHES = [Match("move", "move", False, "log"),
                Match("move", "move_redir", False, "log")]
     __slots__ = ('old', 'new')
-    def __init__(self, timestamp, user, comment, action, old, new):
-        super().__init__(timestamp, user, comment)
+    def initialize(self, timestamp, user, comment,
+                         action, redirect_page_id, old, new):
+        super().initialize(timestamp, user, comment)
         self.action = str(action)
+        self.redirect_page_id = \
+                Unavailable.otherwise(redirect_page_id, int) or 0
         self.old = Page(old)
         self.new = Page(new)
     
     @classmethod
-    def from_api_doc(cls, api_doc):
+    def from_rc_doc(cls, rc_doc, config=configuration.DEFAULT):
         """
         :Example API doc::
             {
@@ -43,65 +49,31 @@ class PageMoved(Event):
                 "tags": []
             }
         """
-        old_ns, old_title = config.title_parser.parse(doc['title'])
-        assert old_ns == doc['ns']
+        old_nsname, old_title = split_page_name(rc_doc['ns'], rc_doc['title'])
         
-        new_ns, new_title = config.title_parser.parse(doc['move']['new_title'])
-        assert new_ns == doc['move']['new_ns']
+        new_nsname, new_title = split_page_name(rc_doc['move']['new_ns'],
+                                                rc_doc['move']['new_title'])
         
         return cls(
-            Timestamp(api_doc["timestamp"]),
+            Timestamp(rc_doc['timestamp']),
             User(
-                int(api_doc['userid']),
-                api_doc['user']
+                rc_doc.get('userid'),
+                rc_doc.get('user')
             ),
-            api_doc['comment'],
-            api_doc['log_action'],
+            rc_doc.get('comment'),
+            rc_doc['logaction'],
+            rc_doc.get('pageid') or 0, # Note: Not the moved page_id.
             Page(
-                api_doc.get('movedpageid'),
-                old_ns,
+                Unavailable,
+                rc_doc['ns'],
                 old_title
             ),
             Page(
-                api_doc.get('movedtitle'),
-                new_ns,
-                new_title
-            )
-        )
-    
-    @classmethod
-    def from_db_row(cls, db_row):
-        """
-        """
-        old_ns, old_title = \
-                config.title_parser.parse(str(db_row['log_title'], 'utf-8'))
-        assert old_ns == db_row['log_namespace']
-        
-        params_array = phpserialize.loads(db_row['log_params'])
-        to_page_name = str(params_array['4::target'], 'utf-8', 'replace')
-        new_ns, new_title = config.title_parser.parse()
-        assert new_ns == doc['move']['new_ns']
-        
-        return cls(
-            Timestamp(api_doc["timestamp"])
-            User(
-                int(api_doc['userid']),
-                api_doc['user']
-            ),
-            api_doc['comment'],
-            api_doc['log_action'],
-            Page(
-                api_doc.get('movedpageid'),
-                old_ns,
-                old_title
-            ),
-            Page(
-                api_doc.get('movedtitle'),
-                new_ns,
+                Unavailable,
+                rc_doc['move']['new_ns'],
                 new_title
             )
         )
 
 
-# Event.register(PageMoved)
-# TODO: Uncomment when ready
+Event.register(PageMoved)

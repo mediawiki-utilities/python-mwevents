@@ -1,17 +1,21 @@
-from .event import Event, Match
+from .. import Block, Timestamp, User
+from ... import configuration
+from ...util import split_page_name
+from .event import Event
+from .match import Match
 
 
 class UserBlocked(Event):
-    MATCHES = [MATCH("block", "block", False, "log"),
-               MATCH("block", "reblock", False, "log")]
+    MATCHES = [Match("block", "block", False, "log"),
+               Match("block", "reblock", False, "log")]
     __slots__ = ('blocked', 'block',)
-    def __init__(self, timestamp, user, comment, blocked, block):
-        super().__init__(timestamp, user, comment)
+    def initialize(self, timestamp, user, comment, blocked, block):
+        super().initialize(timestamp, user, comment)
         self.blocked = User(blocked)
         self.block = Block(block)
     
     @classmethod
-    def from_api_doc(cls, api_doc):
+    def from_rc_doc(cls, rc_doc, config=configuration.DEFAULT):
         """
         {
             "type": "log",
@@ -39,29 +43,30 @@ class UserBlocked(Event):
             "tags": []
         }
         """
-        ns, title = Page.parse_title(api_doc['title'])
-        ns, blocked_name = config.title_parser.parse(title)
-        assert ns == 2
-        blocked_name = blocked_name.replace("_", " ")
+        nsname, blocked_name = split_page_name(rc_doc['ns'], rc_doc['title'])
+        
+        if len(rc_doc['block'].get('flags', "")) > 0:
+            flags = rc_doc['block']['flags'].split(",")
+        else:
+            flags = []
         
         return cls(
-            Timestamp(api_doc['timestamp'])
+            Timestamp(rc_doc['timestamp']),
             User(
-                api_doc['userid'],
-                api_doc['user']
+                rc_doc.get('userid'),
+                rc_doc.get('user')
             ),
-            api_doc['comment'],
+            rc_doc.get('comment'),
             User(
                 None, # Not available
                 blocked_name
             ),
             Block(
-                doc['block']['flags'],
-                doc['block']['duration'],
-                doc['block']['expiry'],
+                flags,
+                rc_doc['block']['duration'],
+                rc_doc['block'].get('expiry'),
             )
         )
     
 
-# Event.register(UserBlocked)
-# TODO: Uncomment when ready
+Event.register(UserBlocked)

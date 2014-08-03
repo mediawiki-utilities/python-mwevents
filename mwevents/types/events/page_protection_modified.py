@@ -1,3 +1,6 @@
+from .. import Page, Protection, Timestamp, Unavailable, User
+from ... import configuration
+from ...util import split_page_name
 from .event import Event
 from .match import Match
 
@@ -6,15 +9,17 @@ class PageProtectionModified(Event):
     MATCHES = [Match("protect", "protect", False, "log"),
                Match("protect", "modify", False, "log"),
                Match("protect", "unprotect", False, "log")]
-    __slots__ = ('page', 'action', 'protection')
-    def __init__(self, timestamp, user, comment, page, action, protections):
-        super().__init__(timestamp, user, comment)
+    __slots__ = ('page', 'action', 'protections')
+    def initialize(self, timestamp, user, comment, page, action, protections):
+        super().initialize(timestamp, user, comment)
         self.page = Page(page)
-        self.action = str(action)
-        self.protections = [Protection(p) for p in protections]
+        self.action = Unavailable.otherwise(action, str, none_ok=False)
+        self.protections = \
+            Unavailable.otherwise(protections,
+                                  lambda ps: [Protection(p) for p in ps])
         
     @classmethod
-    def from_api_doc(cls, api_doc, config=configuration.DEFAULTS):
+    def from_rc_doc(cls, rc_doc, config=configuration.DEFAULT):
         """
         Example:
             {
@@ -40,6 +45,27 @@ class PageProtectionModified(Event):
             }
             {
                 "type": "log",
+                "ns": 4,
+                "title": "Wikipedia:Requests for page protection",
+                "pageid": 352651,
+                "revid": 0,
+                "old_revid": 0,
+                "rcid": 672604441,
+                "user": "NativeForeigner",
+                "userid": "964805",
+                "oldlen": 0,
+                "newlen": 0,
+                "timestamp": "2014-08-02T05:51:34Z",
+                "comment": "Persistent [[WP:Vandalism|vandalism]]/[[WP:BLP|BLP Issues]]",
+                "logid": 57939003,
+                "logtype": "protect",
+                "logaction": "modify",
+                "0": "\u200e[edit=autoconfirmed] (expires 00:00, 31 August 2014 (UTC))\u200e[move=sysop] (indefinite)",
+                "1": "",
+                "tags": []
+            }
+            {
+                "type": "log",
                 "ns": 6,
                 "title": "File:ElmerFlick.jpg",
                 "rcid": 616706496,
@@ -59,29 +85,34 @@ class PageProtectionModified(Event):
                 "tags": []
             }
         """
-        ns, title = config.title_parser.parse(api_doc['title'])
-        assert ns == api_doc['ns']
+        nsname, title = split_page_name(rc_doc['ns'], rc_doc['title'])
         
-        if api_doc['logaction'] in ("protect", "modify"):
-            protections = Protection.from_params(doc.get('0'), config)
-        elif api_doc['logaction'] == "unprotect":
+        if rc_doc['logaction'] in ("protect", "modify"):
+            protections = Protection.from_params(
+                                rc_doc.get('0', ""),
+                                expiration_format=config['expiration_format'],
+                                indefinite=config['indefinite'])
+            
+        elif rc_doc['logaction'] == "unprotect":
             protections = []
+            
         else:
             assert False, "Shouldn't happen."
         
         return cls(
-            Timestamp(api_doc['comment']),
+            Timestamp(rc_doc['timestamp']),
             User(
-                int(api_doc['userid']),
-                api_doc['user']
-            )
+                rc_doc.get('userid'),
+                rc_doc.get('user')
+            ),
+            rc_doc.get('comment'),
             Page(
-                api_doc['pageid'],
-                api_doc['ns'],
+                rc_doc.get('pageid'),
+                rc_doc.get('ns'),
                 title
             ),
+            rc_doc['logaction'],
             protections
         )
     
-# Event.register(PageProtectionModified)
-# TODO: Uncomment when ready
+Event.register(PageProtectionModified)

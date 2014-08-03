@@ -1,20 +1,22 @@
-from .event import Event, Match
+from ... import configuration
+from .event import Event
+from .match import Match
 
 
 class UserRenamed(Event):
     """
     TODO: Figure out what to do with centralauth stuff.
     """
-    MATCHES = [MATCH("renameuser", "renameuser", False, "log")]
+    MATCHES = [Match("renameuser", "renameuser", False, "log")]
     __slots__ = ('old', 'new')
-    def __init__(self, timestamp, user, comment, old, new):
-        super().__init__(timestamp, user, comment)
+    def initialize(self, timestamp, user, comment, old, new):
+        super().initialize(timestamp, user, comment)
         self.old = User(old)
         self.new = User(new)
     
         
     @classmethod
-    def from_api_doc(cls, api_doc):
+    def from_api_doc(cls, api_doc, config=configuration.DEFAULT):
         """
         Example:
             {
@@ -41,21 +43,20 @@ class UserRenamed(Event):
             }
         """
         return cls(
-            Timestamp(doc['timestamp']),
+            Timestamp(rc_doc['timestamp']),
             User(
-                int(doc['userid']),
-                doc['user']
+                rc_doc.get('userid'),
+                rc_doc.get('user')
             ),
-            doc['comment'],
+            rc_doc.get('comment'),
             User(
-                None, #Not available
+                Unavailable, #Not available
                 doc['olduser']
             ),
             User(
-                None, #Not available
+                Unavailable, #Not available
                 doc['newuser']
             )
         )
     
-# Event.register(UserRenamed)
-# TODO: Uncomment when ready
+Event.register(UserRenamed)
