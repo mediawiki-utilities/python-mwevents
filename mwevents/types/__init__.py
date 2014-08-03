@@ -6,4 +6,4 @@ from .timestamp import Timestamp
 from .unavailable import Unavailable, UnavailableType
 from .user import User
 from .page import Page
-from .events import Event
+from .state_marker import StateMarker

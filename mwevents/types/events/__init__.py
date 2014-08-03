@@ -1,4 +1,5 @@
 from .event import Event
+from .match import Match
 from .page_created import PageCreated
 from .page_deleted import PageDeleted
 from .page_moved import PageMoved
