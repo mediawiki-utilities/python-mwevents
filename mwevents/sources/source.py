@@ -1,8 +1,12 @@
 
+class RCListener:
+    
+    def __iter__(self): raise NotImplementedError()
+
 
 class Source:
     
-    def listen(self, *args, **kwargs):
+    def listener(self, *args, **kwargs):
         raise NotImplementedError()
     
     def query(self, start, end, *args, types=None, **kwargs):

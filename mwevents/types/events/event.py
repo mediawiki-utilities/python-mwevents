@@ -3,40 +3,24 @@ from collections import defaultdict
 
 from mw import Timestamp
 
-from jsonable import JSONable
+from jsonable import AbstractJSONable, JSONable
 
 from .. import User
 from ... import configuration
 from .match import Match
 
 
-class Event(JSONable):
+class Event(AbstractJSONable):
     __slots__ = ('timestamp', 'user', 'comment')
     MATCHES = NotImplemented
-    EVENTS = {}
     MATCH_GROUPS = defaultdict(lambda: [])
     PRIORITY = 99
+    CLASS_NAME_KEY = "event"
     
     def initialize(self, timestamp, user, comment):
         self.timestamp = Timestamp(timestamp)
         self.user = User(user)
         self.comment = str(comment)
-    
-    def to_json(self):
-        doc = super().to_json()
-        doc['event'] = self.__class__.__name__
-        return doc
-    
-    
-    @classmethod
-    def from_json(cls, doc):
-        if 'event' in doc:
-            EventClass = cls.EVENTS.get(doc['event'], cls)
-            new_doc = copy.copy(doc)
-            del new_doc['event']
-            return EventClass.from_json(new_doc)
-        else:
-            return cls._from_json(doc)
     
     @classmethod
     def register(cls, EventClass):
@@ -44,7 +28,7 @@ class Event(JSONable):
             cls.MATCH_GROUPS[match].append(EventClass)
             cls.MATCH_GROUPS[match].sort(key=lambda e:e.PRIORITY)
         
-        cls.EVENTS[EventClass.__name__] = EventClass
+        super().register(EventClass)
     
     @classmethod
     def matches(cls, match):
