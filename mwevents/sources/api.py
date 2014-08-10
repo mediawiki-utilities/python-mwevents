@@ -74,58 +74,57 @@ class API:
     def listener(self, state_marker=None, events=None, min_wait=5,
                        rcs_per_request=100, direction="newer",
                        properties=RC_EVENT_PROPS, stop=lambda: False):
-       """
-       :Example:
+        """
+        :Example:
            
-           .. code-block:: python
-           
-               import sys
+            .. code-block:: python
 
-               from mwevents.sources import API
-               from mwevents import RevisionSaved, PageCreated
+                import sys
 
-               API_URL = "http://en.wikipedia.org/w/api.php"
-               try:
-                   api_source = API.from_api_url(API_URL)
-                   listener = api_source.listener(events={RevisionSaved,
-                                                          PageCreated})
-                   for event in listener:
-                       if isinstance(event, RevisionSaved):
-                           print("Revision {0} of {1} saved by {2}."\
-                                 .format(event.revision.id,
-                                         event.revision.page_id,
-                                         event.user))
-                       else: # isinstance(event, PageCreated):
-                           print("Page {0}:{1} created by {2}."\
-                                 .format(event.page.namespace,
-                                         event.page.title,
-                                         event.user))
-                   
-               except KeyboardInterrupt:
-                   sys.stderr.write("Keyboard Interrupt caught.  " + \
-                                    "Shutting down.\n")
-                   sys.stderr.write(str(listener.state_marker.to_json()) + "\n")
-       """
-            state_marker = StateMarker(state_marker) \
-                                if state_marker is not None else StateMarker()
-            
-            events = set(events) if events is not None else None
-                          
-            min_wait = float(min_wait)
-            rcs_per_request = int(rcs_per_request)
-            
-            if not callable(stop):
-                raise TypeError("'stop' must be a callable function")
-            
-            return RCListener(self.session,
-                              state_marker=state_marker,
-                              events=events,
-                              min_wait=min_wait,
-                              rcs_per_request=rcs_per_request,
-                              stop=stop)
-            
-        
-    def query(self, *args, **kwargs): raise NotImplemented Error
+                from mwevents.sources import API
+                from mwevents import RevisionSaved, PageCreated
+
+                API_URL = "http://en.wikipedia.org/w/api.php"
+                try:
+                    api_source = API.from_api_url(API_URL)
+                    listener = api_source.listener(events={RevisionSaved,
+                                                           PageCreated})
+                    for event in listener:
+                        if isinstance(event, RevisionSaved):
+                            print("Revision {0} of {1} saved by {2}."\
+                                  .format(event.revision.id,
+                                          event.revision.page_id,
+                                          event.user))
+                        else: # isinstance(event, PageCreated):
+                            print("Page {0}:{1} created by {2}."\
+                                  .format(event.page.namespace,
+                                          event.page.title,
+                                          event.user))
+
+                except KeyboardInterrupt:
+                    sys.stderr.write("Keyboard Interrupt caught.  " + \
+                                     "Shutting down.\n")
+                    sys.stderr.write(str(listener.state_marker.to_json()) + "\n")
+        """
+        state_marker = StateMarker(state_marker) \
+                       if state_marker is not None else StateMarker()
+
+        events = set(events) if events is not None else None
+
+        min_wait = float(min_wait)
+        rcs_per_request = int(rcs_per_request)
+
+        if not callable(stop):
+            raise TypeError("'stop' must be a callable function")
+
+        return RCListener(self.session,
+                          state_marker=state_marker,
+                          events=events,
+                          min_wait=min_wait,
+                          rcs_per_request=rcs_per_request,
+                          stop=stop)
+
+    def query(self, *args, **kwargs): raise NotImplementedError
     
     @classmethod
     def from_api_url(cls, url):
