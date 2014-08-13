@@ -1,6 +1,7 @@
 from ... import configuration
 from .event import Event
 from .match import Match
+from .. import User, Timestamp, Unavailable
 
 
 class UserRenamed(Event):
@@ -58,5 +59,49 @@ class UserRenamed(Event):
                 doc['newuser']
             )
         )
-    
+
+    @classmethod
+    def from_rc_doc(cls, rc_doc, config=configuration.DEFAULT):
+        """
+        Example:
+            {
+                "logtype": "renameuser",
+                "pageid": 0,
+                "edits": 1,
+                "userid": "1795359",
+                "logid": 57568951,
+                "logaction": "renameuser",
+                "type": "log",
+                "newuser": "Whitedr9gon",
+                "comment": "user request",
+                "newlen": 0,
+                "ns": 2,
+                "old_revid": 0,
+                "rcid": 668780651,
+                "title": "User:Tomahawke",
+                "user": "Xeno",
+                "oldlen": 0,
+                "revid": 0,
+                "olduser": "Tomahawke",
+                "timestamp": "2014-07-14T13:22:06Z"
+            }
+        """
+        return cls(
+            Timestamp(rc_doc.get('timestamp')),
+            User(
+                rc_doc.get('userid'),
+                rc_doc.get('user')
+            ),
+            rc_doc.get('comment'),
+            User(
+                Unavailable,  # Not available
+                rc_doc.get('olduser')
+            ),
+            User(
+                Unavailable,  # Not available
+                rc_doc.get('newuser')
+            )
+        )
+
+
 Event.register(UserRenamed)
